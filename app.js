@@ -4,9 +4,9 @@
  */
 
 var express = require('express')
-  , routes = require('./routes');
+  , app = express.createServer()
+  , io = require('socket.io').listen(app);
 
-var app = module.exports = express.createServer();
 
 // Configuration
 
@@ -28,12 +28,39 @@ app.configure('production', function(){
   app.use(express.errorHandler());
 });
 
+// App Logic
+
+var masterArray = {}; //An object of objects, each containing a session (a song list, a control socket, a player socket, and the current song) keyed on a session token
+var currentToken = 1000; //start the token at 1000, it will keep increasing forever - this should be eventually changed
+
+// Sockets
+  //TODO: socket shit goes here
+  io.sockets.on('connection', function(socket){
+    socket.on('newPlayer', function(data){
+      var toke = ++currentToken;
+      masterArray[toke] = { tracklist: data, player: socket.id, controllers: []};
+      socket.emit('newToken', toke );
+    });
+    socket.on('newController', function(token){
+      if(masterArray[token]){
+        masterArray[token].controllers.push(socket.id);
+        socket.emit('success', '');
+        return;
+      }
+      socket.emit('error', "Something fucked up man. Try again or something");
+    });
+  });
+
+
 // Routes
 
-app.get('/', routes.desktop);
-app.post('/newtracklist', routes.newTrackList);
-app.get('/desktop', routes.desktop);
-app.get('/mobile', routes.mobile);
+app.get('/', function(req, res){
+  res.render('index', { title: 'JustBeat Player' }) 
+});
+app.get('/controls', function(req, res){
+ res.render('controller', { title: 'JustBeat Controls' });
+});
+
 
 app.listen(3000, function(){
   console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
