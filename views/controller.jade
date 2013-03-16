@@ -1,5 +1,6 @@
-h1
+h1(id='header')
   |Gimme a code!
-input(type='number', id='codeInput', onchange='codeChanged(this)')
+input(type='number', id='codeInput', onchange='codeChanged(this.value)')
+#trackBox
 
 script(type='text/javascript', src='javascripts/controller.js')

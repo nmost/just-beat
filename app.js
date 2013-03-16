@@ -36,25 +36,33 @@ var currentToken = 1000; //start the token at 1000, it will keep increasing fore
 // Sockets
   //TODO: socket shit goes here
   io.sockets.on('connection', function(socket){
+    //Connecting and Disconnecting
     socket.on('newPlayer', function(data){
       var toke = ++currentToken;
-      masterArray[toke] = { tracklist: data, player: socket.id, controllers: []};
+      masterArray[toke] = { tracklist: data, player: socket, controllers: []};
       socket.emit('newToken', toke );
     });
     socket.on('newController', function(token){
       if(masterArray[token]){
         masterArray[token].controllers.push(socket.id);
-        socket.emit('success', '');
+        socket.emit('success', masterArray[token].tracklist);
         return;
       }
       socket.emit('error', "Something fucked up man. Try again or something");
+    });
+
+
+    //Playing Tracks
+    socket.on("playTrack", function(data){
+      console.log(data);
+      masterArray[data.token].player.emit("playTrack", data.songID);
     });
   });
 
 
 // Routes
 
-app.get('/', function(req, res){
+app.get('/player', function(req, res){
   res.render('index', { title: 'JustBeat Player' }) 
 });
 app.get('/controls', function(req, res){
